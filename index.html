@@ -594,36 +594,151 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      flex-direction: column;
     }
-    .mockup-body {
-      width: 260px;
-      height: 310px;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .tee-shape {
-      width: 100%;
-      height: 100%;
-    }
-    .custom-preview-text {
+    .design-canvas {
       position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 200px;
+      height: 240px;
+      overflow: hidden;
+      cursor: none;
+    }
+    .design-layer {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform-origin: center center;
+      cursor: grab;
+      user-select: none;
+      touch-action: none;
+    }
+    .design-layer:active { cursor: grabbing; }
+    .design-layer img {
+      display: block;
+      pointer-events: none;
+      transition: width 0.15s ease, height 0.15s ease;
+    }
+    .design-layer-text {
+      position: absolute;
+      top: 62%; left: 50%;
+      transform: translate(-50%, -50%);
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 28px;
-      letter-spacing: 0.1em;
+      font-size: 22px;
+      letter-spacing: 4px;
       color: var(--neon);
       text-align: center;
       pointer-events: none;
+      white-space: nowrap;
+      text-shadow: 0 0 20px rgba(0,255,136,0.4);
       transition: all 0.3s;
+      max-width: 180px;
+      line-height: 1.2;
+      z-index: 3;
     }
-    .custom-preview-img {
+    .rotation-arc {
       position: absolute;
-      max-width: 100px;
-      max-height: 100px;
-      object-fit: contain;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 110px; height: 110px;
+      border-radius: 50%;
+      border: 1px dashed rgba(0,255,136,0.2);
       pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .rotation-arc.show { opacity: 1; }
+    .drag-hint {
+      position: absolute;
+      bottom: 6px; left: 0; right: 0;
+      text-align: center;
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.12);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    /* TRANSFORM PANEL */
+    .transform-panel {
+      display: none;
+      flex-direction: column;
+      gap: 20px;
+      padding: 20px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .transform-panel.visible { display: flex; }
+    .ctrl-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ctrl-btn {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--white);
+      font-size: 16px;
+      cursor: none;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+    .ctrl-btn:hover { border-color: var(--neon); color: var(--neon); }
+    .ctrl-slider {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 3px;
+      background: rgba(255,255,255,0.1);
+      outline: none;
+      cursor: none;
+      border-radius: 0;
+    }
+    .ctrl-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      background: var(--neon);
+      border-radius: 50%;
+      cursor: none;
+      transition: transform 0.15s;
+    }
+    .ctrl-slider::-webkit-slider-thumb:hover { transform: scale(1.4); }
+    .ctrl-slider::-moz-range-thumb {
+      width: 14px; height: 14px;
+      background: var(--neon);
+      border: none; border-radius: 50%;
+    }
+    .ctrl-value {
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--neon);
+      width: 44px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+    .preset-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .scale-preset {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: var(--gray3);
+      font-family: 'Barlow Condensed', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      cursor: none;
+      transition: all 0.2s;
+    }
+    .scale-preset:hover, .scale-preset.active {
+      border-color: var(--neon);
+      color: var(--neon);
+      background: rgba(0,255,136,0.05);
     }
 
     /* LIMITED DROP */
@@ -1315,23 +1430,32 @@
     <div class="mockup-wrap reveal">
       <div class="mockup-bg"></div>
       <div class="mockup-tee">
-        <svg id="teeSvg" viewBox="0 0 300 360" style="width:100%;max-width:320px;" fill="none">
+        <svg id="teeSvg" viewBox="0 0 300 360" style="width:100%;max-width:320px;position:relative;z-index:1;" fill="none">
           <defs>
             <filter id="shadow">
               <feDropShadow dx="0" dy="20" stdDeviation="20" flood-color="rgba(0,0,0,0.5)"/>
             </filter>
           </defs>
-          <!-- Oversized tee shape -->
           <g filter="url(#shadow)">
             <path id="teeBody" d="M40 80 L10 160 L55 175 L55 340 L245 340 L245 175 L290 160 L260 80 Q250 70 230 68 Q210 60 200 70 Q180 90 150 92 Q120 90 100 70 Q90 60 70 68 Q50 70 40 80 Z" fill="#1a1a1a"/>
             <path d="M100 70 Q120 90 150 92 Q180 90 200 70" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1.5"/>
           </g>
         </svg>
-        <!-- Custom text overlay -->
-        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-10%);text-align:center;pointer-events:none;">
-          <div id="previewText" style="font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:4px;color:var(--neon);text-align:center;line-height:1.2;text-shadow:0 0 20px rgba(0,255,136,0.4);transition:all 0.3s;max-width:180px;"></div>
-          <div id="previewImg" style="margin-top:8px;"></div>
+
+        <!-- Drag canvas sits over tee print area -->
+        <div class="design-canvas" id="designCanvas">
+          <div class="rotation-arc" id="rotationArc"></div>
+          <!-- Draggable image layer -->
+          <div class="design-layer" id="designLayer"
+            style="transform:translate(-50%,-50%) translate(0px,0px) rotate(0deg) scale(1);">
+            <img id="uploadedImg" src="" alt="design"
+              style="width:80px;height:80px;object-fit:contain;display:none;" />
+          </div>
+          <div class="drag-hint" id="dragHint">drag to reposition</div>
         </div>
+
+        <!-- Text overlay -->
+        <div class="design-layer-text" id="previewText"></div>
       </div>
     </div>
 
@@ -1347,10 +1471,93 @@
           <div class="custom-opt-label">Upload Your Design</div>
           <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
             <div class="upload-icon">⬆</div>
-            <div class="upload-title">Drop or Click to Upload</div>
+            <div class="upload-title" id="uploadTitle">Drop or Click to Upload</div>
             <div class="upload-sub">PNG, JPG, SVG — Max 10MB</div>
             <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleUpload(event)"/>
           </div>
+        </div>
+
+        <!-- Transform controls — hidden until image uploaded -->
+        <div class="transform-panel" id="transformPanel">
+
+          <!-- Scale -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div class="custom-opt-label" style="margin:0;">Scale</div>
+              <span class="ctrl-value" id="scaleLabel">100%</span>
+            </div>
+            <div class="ctrl-row">
+              <button class="ctrl-btn" onclick="adjustScale(-10)">−</button>
+              <input type="range" class="ctrl-slider" id="scaleSlider" min="20" max="200" value="100" step="5" oninput="updateScale(this.value)" />
+              <button class="ctrl-btn" onclick="adjustScale(10)">+</button>
+            </div>
+            <div class="preset-row" style="margin-top:10px;">
+              <button class="scale-preset" onclick="setScale(40)">XS</button>
+              <button class="scale-preset" onclick="setScale(70)">S</button>
+              <button class="scale-preset active" onclick="setScale(100)">M</button>
+              <button class="scale-preset" onclick="setScale(150)">L</button>
+              <button class="scale-preset" onclick="setScale(200)">XL</button>
+            </div>
+          </div>
+
+          <!-- Rotation -->
+          <div>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <div class="custom-opt-label" style="margin:0;">Rotate</div>
+              <span class="ctrl-value" id="rotateLabel">0°</span>
+            </div>
+            <div class="ctrl-row">
+              <button class="ctrl-btn" onclick="adjustRotate(-15)" title="-15°">↺</button>
+              <input type="range" class="ctrl-slider" id="rotateSlider" min="-180" max="180" value="0" step="1" oninput="updateRotate(this.value)" />
+              <button class="ctrl-btn" onclick="adjustRotate(15)" title="+15°">↻</button>
+            </div>
+            <div class="preset-row" style="margin-top:10px;">
+              <button class="scale-preset" onclick="setRotate(0)">0°</button>
+              <button class="scale-preset" onclick="setRotate(45)">45°</button>
+              <button class="scale-preset" onclick="setRotate(90)">90°</button>
+              <button class="scale-preset" onclick="setRotate(-45)">-45°</button>
+              <button class="scale-preset" onclick="setRotate(180)">180°</button>
+            </div>
+          </div>
+
+          <!-- Position nudge -->
+          <div>
+            <div class="custom-opt-label" style="margin-bottom:10px;">Position</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:108px;">
+              <div></div>
+              <button class="ctrl-btn" onclick="nudge(0,-10)">↑</button>
+              <div></div>
+              <button class="ctrl-btn" onclick="nudge(-10,0)">←</button>
+              <button class="ctrl-btn" onclick="resetPosition()" style="font-size:11px;">⊙</button>
+              <button class="ctrl-btn" onclick="nudge(10,0)">→</button>
+              <div></div>
+              <button class="ctrl-btn" onclick="nudge(0,10)">↓</button>
+              <div></div>
+            </div>
+          </div>
+
+          <!-- Reset & Remove -->
+          <div style="display:flex;gap:10px;">
+            <button onclick="resetTransforms()"
+              style="flex:1;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);
+                     color:var(--gray3);font-family:'Barlow Condensed',sans-serif;font-size:12px;
+                     font-weight:600;letter-spacing:0.15em;text-transform:uppercase;
+                     padding:10px;cursor:none;transition:all 0.2s;"
+              onmouseover="this.style.borderColor='var(--neon)';this.style.color='var(--neon)'"
+              onmouseout="this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='var(--gray3)'">
+              ↺ Reset
+            </button>
+            <button onclick="resetUpload()"
+              style="flex:1;background:rgba(255,43,43,0.05);border:1px solid rgba(255,43,43,0.2);
+                     color:rgba(255,43,43,0.6);font-family:'Barlow Condensed',sans-serif;font-size:12px;
+                     font-weight:600;letter-spacing:0.15em;text-transform:uppercase;
+                     padding:10px;cursor:none;transition:all 0.2s;"
+              onmouseover="this.style.borderColor='var(--neon-red)';this.style.color='var(--neon-red)'"
+              onmouseout="this.style.borderColor='rgba(255,43,43,0.2)';this.style.color='rgba(255,43,43,0.6)'">
+              ✕ Remove
+            </button>
+          </div>
+
         </div>
 
         <!-- Custom text -->
@@ -1672,8 +1879,8 @@
     navbar.classList.toggle('scrolled', window.scrollY > 60);
   });
 
-  // Hamburger menu
-  const hamburger = document.getElementById('hamburger');
+  // ── Hamburger menu ────────────────────────────────────
+  const hamburger  = document.getElementById('hamburger');
   const mobileMenu = document.getElementById('mobileMenu');
   hamburger.addEventListener('click', () => {
     hamburger.classList.toggle('open');
@@ -1686,104 +1893,212 @@
     document.body.style.overflow = '';
   }
 
-  // Scroll reveal
+  // ── Scroll reveal ─────────────────────────────────────
   const reveals = document.querySelectorAll('.reveal');
   const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-      }
-    });
+    entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
   }, { threshold: 0.1 });
   reveals.forEach(el => observer.observe(el));
 
-  // Countdown timer (set to next Friday)
+  // ── Countdown to next Friday ──────────────────────────
   function getNextFriday() {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = (5 - day + 7) % 7 || 7;
-    const friday = new Date(now);
-    friday.setDate(now.getDate() + diff);
-    friday.setHours(23, 59, 0, 0);
-    return friday;
+    const now  = new Date();
+    const diff = (5 - now.getDay() + 7) % 7 || 7;
+    const fri  = new Date(now);
+    fri.setDate(now.getDate() + diff);
+    fri.setHours(23, 59, 0, 0);
+    return fri;
   }
-
   function updateCountdown() {
-    const target = getNextFriday();
-    const now = new Date();
-    const diff = target - now;
-    if (diff <= 0) return;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-    document.getElementById('days').textContent = String(days).padStart(2, '0');
-    document.getElementById('hours').textContent = String(hours).padStart(2, '0');
-    document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
-    document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+    const d = getNextFriday() - new Date();
+    if (d <= 0) return;
+    const pad = n => String(Math.floor(n)).padStart(2, '0');
+    document.getElementById('days').textContent    = pad(d / 86400000);
+    document.getElementById('hours').textContent   = pad((d % 86400000) / 3600000);
+    document.getElementById('minutes').textContent = pad((d % 3600000)  / 60000);
+    document.getElementById('seconds').textContent = pad((d % 60000)    / 1000);
   }
   updateCountdown();
   setInterval(updateCountdown, 1000);
 
-  // Cart
+  // ── Cart & Toast ──────────────────────────────────────
   let cartCount = 0;
-  function addToCart(name, price) {
+  function addToCart(name) {
     cartCount++;
     document.getElementById('cartCount').textContent = cartCount;
-    showToast(`${name} added!`);
+    showToast(name + ' added!');
   }
-
-  // Toast
   function showToast(msg) {
-    const toast = document.getElementById('toast');
-    toast.textContent = msg;
-    toast.classList.add('show');
-    setTimeout(() => toast.classList.remove('show'), 3000);
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  // Custom print preview
+  // ── Custom text preview ───────────────────────────────
   function updatePreview() {
-    const text = document.getElementById('customText').value;
-    document.getElementById('previewText').textContent = text;
+    document.getElementById('previewText').textContent =
+      document.getElementById('customText').value;
   }
 
+  // ── Tee colour ────────────────────────────────────────
   function setTeeColor(color, el) {
     document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
     el.classList.add('active');
     document.getElementById('teeBody').style.fill = color;
-    // Adjust text color for contrast
-    const isLight = color === '#e8e8e8' || color === '#f0f0f0';
-    document.getElementById('previewText').style.color = isLight ? '#000' : 'var(--neon)';
+    document.getElementById('previewText').style.color =
+      (color === '#e8e8e8') ? '#111' : 'var(--neon)';
   }
 
-  function handleUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+  // ════════════════════════════════════════════════════
+  //  DESIGN LAYER — scale / rotate / drag
+  // ════════════════════════════════════════════════════
+  const state = { scale: 1, rotate: 0, x: 0, y: 0 };
+
+  function applyTransform() {
+    document.getElementById('designLayer').style.transform =
+      `translate(calc(-50% + ${state.x}px), calc(-50% + ${state.y}px)) rotate(${state.rotate}deg) scale(${state.scale})`;
+  }
+
+  // Scale
+  function updateScale(value) {
+    state.scale = value / 100;
+    applyTransform();
+    document.getElementById('scaleLabel').textContent = value + '%';
+    const map = { 40:'XS', 70:'S', 100:'M', 150:'L', 200:'XL' };
+    document.querySelectorAll('#transformPanel .scale-preset').forEach(b =>
+      b.classList.toggle('active', b.textContent.trim() === (map[Number(value)] || ''))
+    );
+  }
+  function adjustScale(delta) {
+    const s = document.getElementById('scaleSlider');
+    s.value = Math.min(200, Math.max(20, Number(s.value) + delta));
+    updateScale(s.value);
+  }
+  function setScale(value) {
+    document.getElementById('scaleSlider').value = value;
+    updateScale(value);
+  }
+
+  // Rotation
+  function updateRotate(value) {
+    state.rotate = Number(value);
+    applyTransform();
+    document.getElementById('rotateLabel').textContent = value + '°';
+    const arc = document.getElementById('rotationArc');
+    arc.classList.add('show');
+    clearTimeout(window._arcTimer);
+    window._arcTimer = setTimeout(() => arc.classList.remove('show'), 800);
+  }
+  function adjustRotate(delta) {
+    const s = document.getElementById('rotateSlider');
+    s.value = Math.min(180, Math.max(-180, Number(s.value) + delta));
+    updateRotate(s.value);
+  }
+  function setRotate(value) {
+    document.getElementById('rotateSlider').value = value;
+    updateRotate(value);
+  }
+
+  // Position nudge
+  function nudge(dx, dy) { state.x += dx; state.y += dy; applyTransform(); }
+  function resetPosition() { state.x = 0; state.y = 0; applyTransform(); }
+
+  // Reset all transforms
+  function resetTransforms() {
+    state.scale = 1; state.rotate = 0; state.x = 0; state.y = 0;
+    document.getElementById('scaleSlider').value  = 100;
+    document.getElementById('rotateSlider').value = 0;
+    document.getElementById('scaleLabel').textContent  = '100%';
+    document.getElementById('rotateLabel').textContent = '0°';
+    applyTransform();
+    document.querySelectorAll('#transformPanel .scale-preset').forEach(b =>
+      b.classList.toggle('active', b.textContent.trim() === 'M')
+    );
+    showToast('Transforms reset!');
+  }
+
+  // Show controls
+  function showDesignControls() {
+    document.getElementById('transformPanel').classList.add('visible');
+    document.getElementById('dragHint').style.opacity = '1';
+  }
+
+  // Load file
+  function loadImageFile(file) {
     const reader = new FileReader();
-    reader.onload = (e) => {
-      const preview = document.getElementById('previewImg');
-      preview.innerHTML = `<img src="${e.target.result}" style="max-width:80px;max-height:80px;object-fit:contain;" alt="custom design"/>`;
+    reader.onload = e => {
+      const img = document.getElementById('uploadedImg');
+      img.src = e.target.result;
+      img.style.display = 'block';
+      img.style.width  = '80px';
+      img.style.height = '80px';
+      resetTransforms();
+      showDesignControls();
+      document.getElementById('uploadTitle').textContent = '✓ ' + file.name;
       showToast('Design uploaded!');
     };
     reader.readAsDataURL(file);
   }
+  function handleUpload(event) {
+    const file = event.target.files[0];
+    if (file) loadImageFile(file);
+  }
 
-  // Drag and drop
+  // Remove upload
+  function resetUpload() {
+    const img = document.getElementById('uploadedImg');
+    img.src = ''; img.style.display = 'none';
+    document.getElementById('fileInput').value = '';
+    document.getElementById('uploadTitle').textContent = 'Drop or Click to Upload';
+    document.getElementById('transformPanel').classList.remove('visible');
+    document.getElementById('dragHint').style.opacity = '0';
+    resetTransforms();
+    showToast('Design removed');
+  }
+
+  // Mouse drag to reposition
+  const designLayer = document.getElementById('designLayer');
+  let dragging = false, startX = 0, startY = 0, startSX = 0, startSY = 0;
+  designLayer.addEventListener('mousedown', e => {
+    if (document.getElementById('uploadedImg').style.display === 'none') return;
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    startSX = state.x;  startSY = state.y;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    state.x = startSX + (e.clientX - startX);
+    state.y = startSY + (e.clientY - startY);
+    applyTransform();
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+
+  // Touch drag to reposition
+  designLayer.addEventListener('touchstart', e => {
+    if (document.getElementById('uploadedImg').style.display === 'none') return;
+    dragging = true;
+    startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    startSX = state.x; startSY = state.y;
+  }, { passive: true });
+  document.addEventListener('touchmove', e => {
+    if (!dragging) return;
+    state.x = startSX + (e.touches[0].clientX - startX);
+    state.y = startSY + (e.touches[0].clientY - startY);
+    applyTransform();
+  }, { passive: true });
+  document.addEventListener('touchend', () => { dragging = false; });
+
+  // Drag & drop onto upload zone
   const zone = document.getElementById('uploadZone');
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = 'var(--neon)'; });
-  zone.addEventListener('dragleave', () => zone.style.borderColor = '');
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.style.borderColor = 'var(--neon)'; });
+  zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
   zone.addEventListener('drop', e => {
     e.preventDefault();
     zone.style.borderColor = '';
     const file = e.dataTransfer.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        document.getElementById('previewImg').innerHTML = `<img src="${ev.target.result}" style="max-width:80px;max-height:80px;object-fit:contain;" alt="custom"/>`;
-        showToast('Design uploaded!');
-      };
-      reader.readAsDataURL(file);
-    }
+    if (file) loadImageFile(file);
   });
 </script>
 </body>
